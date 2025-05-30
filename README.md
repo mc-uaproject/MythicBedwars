@@ -88,12 +88,6 @@ If you encounter any issues or have suggestions for improvements, please open an
 
 This project is licensed under the [MIT License](LICENSE).
 
-## Credits
-
-- **Developer**: [ikeepcaIm](https://github.com/ikeepcalm)
-- **MBedwars API**: [Marcely](https://www.spigotmc.org/resources/authors/marcely.21256/)
-- **CircleOfImagination**: [ikeepcaIm](https://github.com/ikeepcalm)
-
 ---
 
 Made with ❤️ for the Minecraft community
