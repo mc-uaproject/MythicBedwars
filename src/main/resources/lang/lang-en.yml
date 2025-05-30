@@ -1,0 +1,33 @@
+# English language file for BedwarsMagicAddon
+
+magic:
+  shop:
+    category: "Magic"
+    potion:
+      name: "Sequence {sequence} Potion"
+      lore:
+        - "&7Advance to Sequence {sequence}"
+        - "&7of the {pathway} pathway"
+        - ""
+        - "&eClick to purchase!"
+
+  messages:
+    team_pathway_assigned: "Team {team} has been assigned the {pathway} pathway!"
+    potion_purchased: "Purchased Sequence {sequence} potion!"
+    must_advance_in_order: "You must advance sequences in order!"
+    wrong_pathway_potion: "You can only consume potions from your team's pathway!"
+    gained_sequence: "You have advanced to Sequence {sequence}!"
+
+  pathways:
+    fool: "Fool"
+    door: "Door"
+    error: "Error"
+    priest: "Priest"
+    sun: "Sun"
+    tyrant: "Tyrant"
+    demoness: "Demoness"
+
+  errors:
+    no_magic_assigned: "Your team hasn't been assigned a magic pathway yet!"
+    arena_not_found: "Arena not found!"
+    team_not_found: "Team not found!"

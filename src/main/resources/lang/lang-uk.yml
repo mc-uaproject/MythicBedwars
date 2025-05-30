@@ -1,0 +1,31 @@
+magic:
+  shop:
+    category: "Магія"
+    potion:
+      name: "Зілля Послідовності {sequence}"
+      lore:
+        - "&7Перейти до Послідовності {sequence}"
+        - "&7шляху {pathway}"
+        - ""
+        - "&eКлацніть для покупки!"
+
+  messages:
+    team_pathway_assigned: "Команда {team} отримала шлях {pathway}!"
+    potion_purchased: "Придбано зілля Послідовності {sequence}!"
+    must_advance_in_order: "Ви повинні просуватися послідовно!"
+    wrong_pathway_potion: "Ви можете споживати зілля лише з шляху вашої команди!"
+    gained_sequence: "Ви просунулися до Послідовності {sequence}!"
+
+  pathways:
+    fool: "Блазень"
+    door: "Брама"
+    error: "Помилка"
+    priest: "Жрець"
+    sun: "Сонце"
+    tyrant: "Тиран"
+    demoness: "Демонесса"
+
+  errors:
+    no_magic_assigned: "Вашій команді ще не призначено магічний шлях!"
+    arena_not_found: "Арену не знайдено!"
+    team_not_found: "Команду не знайдено!"
