@@ -30,7 +30,7 @@ public class ActingProgressionTask extends BukkitRunnable {
                 double multiplier = plugin.getConfigManager().getPassiveActingMultiplier();
                 int baseAmount = plugin.getConfigManager().getPassiveActingAmount();
 
-                int sequence = beyonder.getLowestSequence();
+                int sequence = beyonder.getLowestSequenceNumber();
                 double sequenceMultiplier = getSequenceMultiplier(sequence);
 
                 int actingAmount = (int) (baseAmount * multiplier * sequenceMultiplier);
@@ -44,11 +44,11 @@ public class ActingProgressionTask extends BukkitRunnable {
 
     private double getSequenceMultiplier(int sequence) {
         return switch (sequence) {
-            case 9 -> 4.0;
-            case 8 -> 2.0;
-            case 7 -> 1.0;
-            case 6 -> 0.8;
-            case 5 -> 0.6;
+            case 9 -> 3.5;
+            case 8 -> 3.0;
+            case 7 -> 2.5;
+            case 6 -> 1.3;
+            case 5 -> 1.1;
             case 4 -> 0.4;
             case 3 -> 0.3;
             case 2 -> 0.2;

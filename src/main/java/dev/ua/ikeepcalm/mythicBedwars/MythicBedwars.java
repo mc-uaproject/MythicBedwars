@@ -3,8 +3,9 @@ package dev.ua.ikeepcalm.mythicBedwars;
 import de.marcely.bedwars.api.BedwarsAPI;
 import dev.ua.ikeepcalm.mythicBedwars.listener.ArenaListener;
 import dev.ua.ikeepcalm.mythicBedwars.listener.PlayerListener;
-import dev.ua.ikeepcalm.mythicBedwars.manager.PathwayManager;
 import dev.ua.ikeepcalm.mythicBedwars.manager.ConfigManager;
+import dev.ua.ikeepcalm.mythicBedwars.manager.LocaleManager;
+import dev.ua.ikeepcalm.mythicBedwars.manager.PathwayManager;
 import dev.ua.ikeepcalm.mythicBedwars.manager.ShopManager;
 import dev.ua.ikeepcalm.mythicBedwars.runnable.ActingProgressionTask;
 import org.bukkit.Bukkit;
@@ -14,6 +15,7 @@ public final class MythicBedwars extends JavaPlugin {
 
     private static MythicBedwars instance;
     private ConfigManager configManager;
+    private LocaleManager localeManager;
     private PathwayManager pathwayManager;
     private ShopManager shopManager;
 
@@ -35,7 +37,7 @@ public final class MythicBedwars extends JavaPlugin {
 
                 if (apiVersion < supportedAPIVersion)
                     throw new IllegalStateException();
-            } catch(Exception e) {
+            } catch (Exception e) {
                 getLogger().warning("Sorry, your installed version of MBedwars is not supported. Please install at least v" + supportedVersionName);
                 Bukkit.getPluginManager().disablePlugin(this);
                 return;
@@ -50,6 +52,9 @@ public final class MythicBedwars extends JavaPlugin {
 
         configManager = new ConfigManager(this);
         configManager.loadConfig();
+
+        localeManager = new LocaleManager(this, LocaleManager.Locale.UK);
+        localeManager.loadLocales();
 
         pathwayManager = new PathwayManager();
         shopManager = new ShopManager(this);
@@ -93,5 +98,9 @@ public final class MythicBedwars extends JavaPlugin {
 
     public ShopManager getShopManager() {
         return shopManager;
+    }
+
+    public LocaleManager getLocaleManager() {
+        return localeManager;
     }
 }

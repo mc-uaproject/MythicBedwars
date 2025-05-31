@@ -12,9 +12,9 @@ MythicBedwars is a magical addon for Marcely's Bedwars that integrates the Circl
 - **Acting Progression**: Players gain "acting" (magical energy) passively and through game actions like kills and bed breaks
 - **Balanced Economy**: Configurable prices for potions using standard Bedwars currencies (iron, gold, diamond, emerald)
 - **Team-Based Magic**: Each team has its own magical pathway, creating unique strategies and gameplay dynamics
-- **Multilingual Support**: Includes English and Ukrainian language files
+- **Multilingual Support**: Includes Ukrainian language files and ability to customize them
 
-## Installation
+_## Installation_
 
 1. Make sure you have [MBedwars](https://www.spigotmc.org/resources/marcelys-bedwars-1-8-1-20.50217/) (version 5.5.3 or higher) installed
 2. Install the [CircleOfImagination](https://github.com/ikeepcalm/circle-of-imagination) plugin (version 1.1.7 or higher)
@@ -28,9 +28,6 @@ MythicBedwars is a magical addon for Marcely's Bedwars that integrates the Circl
 ### Main Configuration (config.yml)
 
 ```yaml
-# Skip ritual requirements for sequences in Bedwars
-skip-rituals: true
-
 # Acting progression multipliers
 acting:
   # Base amount of acting gained per second
@@ -43,22 +40,11 @@ acting:
   final-kill-multiplier: 7.0
   # Multiplier for breaking enemy beds
   bed-break-multiplier: 10.0
-
-# Potion prices per sequence
-# Available currencies: iron, gold, diamond, emerald
-potion-prices:
-  9:
-    iron: 0
-    gold: 20
-    diamond: 0
-    emerald: 0
-  # ... more sequence prices ...
 ```
 
 ### Language Files
 
-The plugin includes language files for English and Ukrainian. You can customize messages in:
-- `lang/lang-en.yml`
+The plugin includes language files for Ukrainian. You can customize messages in:
 - `lang/lang-uk.yml`
 
 ## Usage
