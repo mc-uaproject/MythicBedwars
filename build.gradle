@@ -20,9 +20,11 @@ repositories {
     maven {
         url = 'https://repo.marcely.de/repository/maven-public/'
     }
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
+    implementation 'com.github.plan-player-analytics:Plan:5.6.2965'
     compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
     compileOnly 'de.marcely.bedwars:API:5.5.3'
     compileOnly 'dev.ua.ikeepcalm:CircleOfImagination:1.1.7-SNAPSHOT'

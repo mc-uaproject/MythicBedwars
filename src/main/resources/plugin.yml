@@ -7,3 +7,5 @@ description: "Magic addon for Marcely's Bedwars using Circle of Imagination"
 depend:
   - MBedwars
   - CircleOfImagination
+softdepend:
+  - Plan

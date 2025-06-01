@@ -2,25 +2,29 @@ package dev.ua.ikeepcalm.mythicBedwars.listener;
 
 import de.marcely.bedwars.api.arena.Arena;
 import de.marcely.bedwars.api.arena.ArenaStatus;
+import de.marcely.bedwars.api.arena.KickReason;
 import de.marcely.bedwars.api.arena.Team;
 import de.marcely.bedwars.api.event.arena.ArenaBedBreakEvent;
 import de.marcely.bedwars.api.event.arena.ArenaStatusChangeEvent;
 import de.marcely.bedwars.api.event.arena.ArenaUnloadEvent;
+import de.marcely.bedwars.api.event.arena.RoundEndEvent;
 import de.marcely.bedwars.api.event.player.PlayerJoinArenaEvent;
 import de.marcely.bedwars.api.event.player.PlayerKillPlayerEvent;
 import de.marcely.bedwars.api.event.player.PlayerQuitArenaEvent;
 import de.marcely.bedwars.api.event.player.PlayerTeamChangeEvent;
 import dev.ua.ikeepcalm.coi.domain.beyonder.model.Beyonder;
 import dev.ua.ikeepcalm.mythicBedwars.MythicBedwars;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class ArenaListener implements Listener {
 
     private final MythicBedwars plugin;
+    private final Map<String, Long> arenaStartTimes = new HashMap<>();
 
     public ArenaListener(MythicBedwars plugin) {
         this.plugin = plugin;
@@ -32,23 +36,18 @@ public class ArenaListener implements Listener {
 
         if (event.getNewStatus() == ArenaStatus.LOBBY && event.getOldStatus() != ArenaStatus.LOBBY) {
             plugin.getArenaPathwayManager().assignPathwaysToTeams(arena);
+        }
 
-            for (Team team : arena.getAliveTeams()) {
-                String pathway = plugin.getArenaPathwayManager().getTeamPathway(arena, team);
-                if (pathway != null) {
-                    Component message = Component.text("Team " + team.getDisplayName() + " has been assigned the ")
-                            .color(NamedTextColor.GRAY)
-                            .append(Component.text(pathway).color(NamedTextColor.LIGHT_PURPLE))
-                            .append(Component.text(" pathway!").color(NamedTextColor.GRAY));
-
-                    for (Player player : arena.getPlayers()) {
-                        player.sendMessage(message);
-                    }
-                }
-            }
+        if (event.getNewStatus() == ArenaStatus.RUNNING) {
+            arenaStartTimes.put(arena.getName(), System.currentTimeMillis());
         }
 
         if (event.getNewStatus() == ArenaStatus.STOPPED) {
+            Long startTime = arenaStartTimes.remove(arena.getName());
+            if (startTime != null && plugin.getStatisticsManager() != null) {
+                long duration = System.currentTimeMillis() - startTime;
+                plugin.getStatisticsManager().recordGameDuration(arena, duration);
+            }
             plugin.getArenaPathwayManager().cleanupArena(arena);
         }
     }
@@ -57,6 +56,16 @@ public class ArenaListener implements Listener {
     public void onArenaEnd(ArenaUnloadEvent event) {
         Arena arena = event.getArena();
         plugin.getArenaPathwayManager().cleanupArena(arena);
+    }
+
+    @EventHandler
+    public void onGameEnd(RoundEndEvent event) {
+        Arena arena = event.getArena();
+        Team winner = event.getWinnerTeam();
+
+        if (winner != null && plugin.getStatisticsManager() != null) {
+            plugin.getStatisticsManager().recordGameEnd(arena, winner);
+        }
     }
 
     @EventHandler
@@ -73,9 +82,14 @@ public class ArenaListener implements Listener {
     }
 
     @EventHandler
-    public void onPlayerQuitArena(PlayerQuitArenaEvent event) {
-        Player player = event.getPlayer();
-        plugin.getArenaPathwayManager().cleanupPlayer(player);
+    public void onPlayerQuit(PlayerQuitArenaEvent event) {
+        if (event.getReason() == KickReason.GAME_LOSE
+                || event.getReason() == KickReason.GAME_END
+                || event.getReason() == KickReason.ARENA_STOP
+                || event.getReason() == KickReason.LEAVE
+                || event.getReason() == KickReason.PLUGIN_STOP) {
+            plugin.getArenaPathwayManager().cleanupPlayer(event.getPlayer());
+        }
     }
 
     @EventHandler
@@ -84,7 +98,7 @@ public class ArenaListener implements Listener {
         Arena arena = event.getArena();
         Team team = event.getNewTeam();
 
-        if (arena.getStatus() == ArenaStatus.RUNNING) {
+        if (arena.getStatus() == ArenaStatus.RUNNING && team != null) {
             plugin.getArenaPathwayManager().initializePlayerMagic(player, arena, team);
         }
     }

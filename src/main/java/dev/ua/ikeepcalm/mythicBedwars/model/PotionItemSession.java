@@ -73,6 +73,10 @@ public class PotionItemSession extends SpecialItemUseSession {
 
         beyonder.consumePotion(pathway, sequence);
 
+        if (MythicBedwars.getInstance().getStatisticsManager() != null) {
+            MythicBedwars.getInstance().getStatisticsManager().recordSequenceReached(teamPathway, sequence);
+        }
+
         takeItem();
         stop();
     }

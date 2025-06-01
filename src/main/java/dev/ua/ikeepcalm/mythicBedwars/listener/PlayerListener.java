@@ -1,23 +1,27 @@
 package dev.ua.ikeepcalm.mythicBedwars.listener;
 
+import de.marcely.bedwars.api.BedwarsAPI;
+import de.marcely.bedwars.api.arena.Arena;
 import dev.ua.ikeepcalm.coi.api.events.AbilityUsageEvent;
-import dev.ua.ikeepcalm.coi.api.events.PotionConsumptionEvent;
+import dev.ua.ikeepcalm.coi.api.events.MagicBlockEvent;
 import dev.ua.ikeepcalm.coi.domain.beyonder.model.Beyonder;
 import dev.ua.ikeepcalm.coi.domain.pathway.types.FlexiblePathway;
 import dev.ua.ikeepcalm.coi.domain.potion.model.SequencePotion;
+import dev.ua.ikeepcalm.coi.pathways.darkness.abilities.nightmare.Nightmare;
+import dev.ua.ikeepcalm.coi.pathways.demoness.abilities.ThreadHands;
 import dev.ua.ikeepcalm.mythicBedwars.MythicBedwars;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Location;
-import org.bukkit.Tag;
+import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Collection;
+import java.util.List;
 
 public class PlayerListener implements Listener {
 
@@ -28,29 +32,35 @@ public class PlayerListener implements Listener {
     }
 
     @EventHandler
-    public void onAbilityUsage(AbilityUsageEvent event) {
+    public void onSpecificAbilityUsage(AbilityUsageEvent event) {
         if (!plugin.getArenaPathwayManager().hasPlayerMagic(event.getPlayer())) {
             return;
         }
 
-        if (hasBedNearby(event.getPlayer().getLocation())) {
+        List<Class<?>> blockedAbilities = List.of(ThreadHands.class, Nightmare.class);
+        if (blockedAbilities.stream().anyMatch(clazz -> clazz.isInstance(event.getAbility()))) {
             event.setCancelled(true);
         }
     }
 
-    private boolean hasBedNearby(Location location) {
-        int radius = 25;
-        for (int x = -radius; x <= radius; x++) {
-            for (int y = -radius; y <= radius; y++) {
-                for (int z = -radius; z <= radius; z++) {
-                    Location checkLoc = location.clone().add(x, y, z);
-                    if (Tag.BEDS.isTagged(checkLoc.getBlock().getType())) {
-                        return true;
-                    }
-                }
+    @EventHandler
+    public void onNonArenaAbilityUsage(AbilityUsageEvent event) {
+        Arena arena = BedwarsAPI.getGameAPI().getArenaByPlayer(event.getPlayer());
+        if (arena == null) {
+            event.setCancelled(true);
+        } else {
+            if (event.getPlayer().getGameMode() == GameMode.SPECTATOR) {
+                event.setCancelled(true);
             }
         }
-        return false;
+    }
+
+    @EventHandler
+    public void onBlockBreak(MagicBlockEvent event) {
+        @Nullable Collection<Arena> arenas = BedwarsAPI.getGameAPI().getArenaByLocation(event.getLocation());
+        if (arenas != null) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler
@@ -72,7 +82,6 @@ public class PlayerListener implements Listener {
 
                 if (!currentPathway.getName().equals(plugin.getArenaPathwayManager().getPlayerData(player).getPathway())) {
                     event.setCancelled(true);
-                    player.sendMessage(Component.text("Атятя! Лише магію свого шляху!", NamedTextColor.RED));
                 }
             }
         }
