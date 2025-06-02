@@ -11,3 +11,6 @@ acting:
   final-kill-multiplier: 7.0
   # Multiplier for breaking enemy beds
   bed-break-multiplier: 10.0
+
+statistics:
+  save-interval-seconds: 300

@@ -3,7 +3,7 @@ package dev.ua.ikeepcalm.mythicBedwars.manager;
 import de.marcely.bedwars.api.BedwarsAPI;
 import de.marcely.bedwars.api.game.specialitem.SpecialItem;
 import dev.ua.ikeepcalm.mythicBedwars.MythicBedwars;
-import dev.ua.ikeepcalm.mythicBedwars.model.PotionShopItem;
+import dev.ua.ikeepcalm.mythicBedwars.model.item.PotionShopItem;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;

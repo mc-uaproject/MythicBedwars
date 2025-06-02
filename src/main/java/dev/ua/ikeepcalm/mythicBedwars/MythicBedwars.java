@@ -6,15 +6,20 @@ import de.marcely.bedwars.api.BedwarsAPI;
 import dev.ua.ikeepcalm.mythicBedwars.listener.ArenaListener;
 import dev.ua.ikeepcalm.mythicBedwars.listener.DamageListener;
 import dev.ua.ikeepcalm.mythicBedwars.listener.PlayerListener;
+import dev.ua.ikeepcalm.mythicBedwars.listener.ServerShutdownListener;
 import dev.ua.ikeepcalm.mythicBedwars.manager.*;
-import dev.ua.ikeepcalm.mythicBedwars.model.StatisticsDatabase;
+import dev.ua.ikeepcalm.mythicBedwars.model.database.DatabaseMigration;
+import dev.ua.ikeepcalm.mythicBedwars.model.database.PathwayStats;
+import dev.ua.ikeepcalm.mythicBedwars.model.database.SQLiteDatabase;
 import dev.ua.ikeepcalm.mythicBedwars.runnable.ActingProgressionTask;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
-import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
 
 public final class MythicBedwars extends JavaPlugin {
 
@@ -24,13 +29,15 @@ public final class MythicBedwars extends JavaPlugin {
     private PathwayManager pathwayManager;
     private ShopManager shopManager;
     private StatisticsManager statisticsManager;
-    private StatisticsDatabase statisticsDatabase;
+    private SQLiteDatabase database;
+    private BukkitTask periodicSaveTask; // Added field for the task
+    private int saveIntervalSeconds; // Added field for config value
 
     @Override
     public void onEnable() {
         instance = this;
 
-        ConfigurationSerialization.registerClass(StatisticsManager.PathwayStats.class);
+        ConfigurationSerialization.registerClass(PathwayStats.class);
 
         if (!Bukkit.getPluginManager().isPluginEnabled("MBedwars")) {
             getLogger().severe("MBedwars not found! Disabling addon...");
@@ -44,8 +51,7 @@ public final class MythicBedwars extends JavaPlugin {
                 Class<?> apiClass = Class.forName("de.marcely.bedwars.api.BedwarsAPI");
                 int apiVersion = (int) apiClass.getMethod("getAPIVersion").invoke(null);
 
-                if (apiVersion < supportedAPIVersion)
-                    throw new IllegalStateException();
+                if (apiVersion < supportedAPIVersion) throw new IllegalStateException();
             } catch (Exception e) {
                 getLogger().warning("Sorry, your installed version of MBedwars is not supported. Please install at least v" + supportedVersionName);
                 Bukkit.getPluginManager().disablePlugin(this);
@@ -62,37 +68,74 @@ public final class MythicBedwars extends JavaPlugin {
         configManager = new ConfigManager(this);
         configManager.loadConfig();
 
+        this.saveIntervalSeconds = configManager.getAutoSaveInterval();
+
         localeManager = new LocaleManager(this, LocaleManager.Locale.UK);
         localeManager.loadLocales();
 
         pathwayManager = new PathwayManager();
         shopManager = new ShopManager(this);
 
-        statisticsDatabase = new StatisticsDatabase(this);
+        database = new SQLiteDatabase(this);
+        database.initialize();
 
         statisticsManager = new StatisticsManager(this);
-        Map<String, StatisticsManager.PathwayStats> loadedStats = statisticsDatabase.loadStatistics();
-        if (loadedStats != null && !loadedStats.isEmpty()) {
-            statisticsManager.setPathwayStatistics(loadedStats);
-            getLogger().info("Loaded " + loadedStats.size() + " pathway statistics entries.");
-        } else {
-            getLogger().info("No statistics data found or loaded.");
-        }
 
-        registerEvents();
-        registerShopItems();
-        registerPlanStatistics();
+        CompletableFuture<Void> loadingFuture = loadStatistics().thenRun(() -> {
+            registerEvents();
+            registerShopItems();
 
-        new ActingProgressionTask(this).runTaskTimer(this, 20L, 20L);
+            Bukkit.getScheduler().runTask(this, this::registerPlanStatistics);
 
-        getLogger().info("BedwarsMagicAddon enabled!");
+            new ActingProgressionTask(this).runTaskTimer(this, 20L, 20L);
+
+            if (this.saveIntervalSeconds > 0 && database != null && statisticsManager != null) {
+                long saveIntervalTicks = this.saveIntervalSeconds * 20L;
+                this.periodicSaveTask = Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
+                    if (database.isConnected() && statisticsManager.getPathwayStatistics() != null && !statisticsManager.getPathwayStatistics().isEmpty()) {
+                        getLogger().info("Periodically saving statistics...");
+                        database.saveStatistics(statisticsManager.getPathwayStatistics()).thenRun(() -> getLogger().info("Periodic statistics save complete.")).exceptionally(ex -> {
+                            getLogger().log(Level.WARNING, "Periodic statistics save failed.", ex);
+                            return null;
+                        });
+                    } else if (!database.isConnected()) {
+                        getLogger().warning("Cannot perform periodic statistics save: Database not connected.");
+                    }
+                }, saveIntervalTicks, saveIntervalTicks);
+                getLogger().info("Scheduled periodic statistics save every " + this.saveIntervalSeconds + " seconds.");
+            } else if (this.saveIntervalSeconds <= 0) {
+                getLogger().info("Periodic statistics saving is disabled (save-interval-seconds <= 0).");
+            }
+
+            getLogger().info("BedwarsMagicAddon enabled!");
+        });
     }
 
     @Override
     public void onDisable() {
-        if (statisticsManager != null && statisticsDatabase != null) {
-            statisticsDatabase.saveStatistics(statisticsManager.getPathwayStatistics());
-            getLogger().info("Statistics saved.");
+        if (periodicSaveTask != null && !periodicSaveTask.isCancelled()) {
+            periodicSaveTask.cancel();
+            getLogger().info("Cancelled periodic statistics save task.");
+        }
+
+        if (statisticsManager != null && database != null && database.isConnected()) {
+            getLogger().info("Saving final statistics synchronously on disable...");
+            database.saveStatistics(statisticsManager.getPathwayStatistics(), true).thenRun(() -> {
+                getLogger().info("Final statistics saved.");
+            }).exceptionally(ex -> {
+                getLogger().severe("An unexpected issue occurred with the final save's CompletableFuture: " + ex.getMessage());
+                return null;
+            }).thenRun(() -> {
+                database.close();
+                getLogger().info("Database connection closed.");
+            });
+        } else {
+            if (database != null && !database.isConnected()) {
+                getLogger().warning("Could not save final statistics: Database not connected.");
+            } else if (database != null) {
+                database.close();
+                getLogger().info("Database connection closed (statistics or manager was null).");
+            }
         }
 
         if (pathwayManager != null) {
@@ -102,10 +145,30 @@ public final class MythicBedwars extends JavaPlugin {
         getLogger().info("BedwarsMagicAddon disabled!");
     }
 
+    private CompletableFuture<Void> loadStatistics() {
+        DatabaseMigration migration = new DatabaseMigration(this, database);
+
+        return migration.migrateFromYaml().thenCompose(migrated -> {
+            if (migrated) {
+                getLogger().info("Successfully migrated statistics from YAML to SQLite!");
+            }
+
+            return database.loadStatistics().thenAccept(loadedStats -> {
+                if (loadedStats != null && !loadedStats.isEmpty()) {
+                    statisticsManager.setPathwayStatistics(loadedStats);
+                    getLogger().info("Loaded " + loadedStats.size() + " pathway statistics entries from database.");
+                } else {
+                    getLogger().info("No statistics data found in database.");
+                }
+            });
+        });
+    }
+
     private void registerEvents() {
         Bukkit.getPluginManager().registerEvents(new ArenaListener(this), this);
         Bukkit.getPluginManager().registerEvents(new PlayerListener(this), this);
         Bukkit.getPluginManager().registerEvents(new DamageListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new ServerShutdownListener(this), this);
     }
 
     private void registerShopItems() {
@@ -128,17 +191,14 @@ public final class MythicBedwars extends JavaPlugin {
                         service.get().register(statisticsManager);
                         getLogger().info("Successfully registered Plan statistics!");
 
-
-                        CapabilityService.getInstance().registerEnableListener(
-                                isPlanEnabled -> {
-                                    if (isPlanEnabled) registerPlanStatistics();
-                                }
-                        );
+                        CapabilityService.getInstance().registerEnableListener(isPlanEnabled -> {
+                            if (isPlanEnabled) registerPlanStatistics();
+                        });
                     }
                 }
             } catch (Exception e) {
                 getLogger().warning("Failed to register Plan statistics: " + e.getMessage());
-                e.printStackTrace(); // For more detailed error logging during development
+                e.printStackTrace();
             }
         }
     }

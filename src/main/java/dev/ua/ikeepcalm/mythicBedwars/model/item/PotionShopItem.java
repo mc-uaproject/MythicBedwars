@@ -1,4 +1,4 @@
-package dev.ua.ikeepcalm.mythicBedwars.model;
+package dev.ua.ikeepcalm.mythicBedwars.model.item;
 
 import de.marcely.bedwars.api.event.player.PlayerUseSpecialItemEvent;
 import de.marcely.bedwars.api.game.specialitem.SpecialItemUseHandler;

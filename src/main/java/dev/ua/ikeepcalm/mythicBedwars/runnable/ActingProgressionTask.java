@@ -5,6 +5,7 @@ import de.marcely.bedwars.api.arena.Arena;
 import de.marcely.bedwars.api.arena.ArenaStatus;
 import dev.ua.ikeepcalm.coi.domain.beyonder.model.Beyonder;
 import dev.ua.ikeepcalm.mythicBedwars.MythicBedwars;
+import dev.ua.ikeepcalm.mythicBedwars.manager.PathwayManager;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -22,7 +23,8 @@ public class ActingProgressionTask extends BukkitRunnable {
             if (arena.getStatus() != ArenaStatus.RUNNING) continue;
 
             for (Player player : arena.getPlayers()) {
-                if (!plugin.getArenaPathwayManager().hasPlayerMagic(player)) continue;
+                PathwayManager.PlayerMagicData data = plugin.getArenaPathwayManager().getPlayerData(player);
+                if (data == null || !data.isActive()) continue;
 
                 Beyonder beyonder = Beyonder.of(player);
                 if (beyonder == null) continue;

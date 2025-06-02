@@ -76,6 +76,12 @@ public class ArenaListener implements Listener {
         if (arena.getStatus() == ArenaStatus.RUNNING) {
             Team team = arena.getPlayerTeam(player);
             if (team != null) {
+                if (plugin.getArenaPathwayManager().isPlayerInArena(player, arena.getName())) {
+                    var data = plugin.getArenaPathwayManager().getPlayerData(player);
+                    if (data != null) {
+                        data.setActive(true);
+                    }
+                }
                 plugin.getArenaPathwayManager().initializePlayerMagic(player, arena, team);
             }
         }
@@ -83,12 +89,20 @@ public class ArenaListener implements Listener {
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitArenaEvent event) {
-        if (event.getReason() == KickReason.GAME_LOSE
+        Player player = event.getPlayer();
+        Arena arena = event.getArena();
+
+        boolean isGameEnding = event.getReason() == KickReason.GAME_LOSE
                 || event.getReason() == KickReason.GAME_END
-                || event.getReason() == KickReason.ARENA_STOP
-                || event.getReason() == KickReason.LEAVE
-                || event.getReason() == KickReason.PLUGIN_STOP) {
-            plugin.getArenaPathwayManager().cleanupPlayer(event.getPlayer());
+                || event.getReason() == KickReason.ARENA_STOP;
+
+        boolean isVoluntaryLeave = event.getReason() == KickReason.LEAVE
+                || event.getReason() == KickReason.PLUGIN_STOP;
+
+        if (isGameEnding || isVoluntaryLeave || arena.getStatus() != ArenaStatus.RUNNING) {
+            plugin.getArenaPathwayManager().cleanupPlayer(player);
+        } else {
+            plugin.getArenaPathwayManager().markPlayerInactive(player);
         }
     }
 

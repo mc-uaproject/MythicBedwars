@@ -38,4 +38,8 @@ public class ConfigManager {
         return config.getInt("acting.passive-amount", 10);
     }
 
+    public int getAutoSaveInterval() {
+        return config.getInt("statistics.save-interval-seconds", 300);
+    }
+
 }

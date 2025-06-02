@@ -14,11 +14,10 @@ import com.djrapitops.plan.extension.table.Table;
 import de.marcely.bedwars.api.arena.Arena;
 import de.marcely.bedwars.api.arena.Team;
 import dev.ua.ikeepcalm.mythicBedwars.MythicBedwars;
-import org.bukkit.configuration.serialization.ConfigurationSerializable;
-import org.jetbrains.annotations.NotNull;
+import dev.ua.ikeepcalm.mythicBedwars.model.database.PathwayStats;
 
-import java.io.Serializable;
-import java.util.*;
+import java.util.Comparator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @PluginInfo(name = "MythicBedwars", iconName = "magic", iconFamily = Family.SOLID, color = Color.PURPLE)
@@ -179,9 +178,9 @@ public class StatisticsManager implements DataExtension {
             format = FormatType.NONE
     )
     public long highestWinRate() {
-        double maxWinRate = pathwayStatistics.entrySet().stream()
-                .filter(e -> e.getValue().totalGames > 0)
-                .mapToDouble(e -> (double) e.getValue().wins / e.getValue().totalGames * 100)
+        double maxWinRate = pathwayStatistics.values().stream()
+                .filter(pathwayStats -> pathwayStats.totalGames > 0)
+                .mapToDouble(pathwayStats -> (double) pathwayStats.wins / pathwayStats.totalGames * 100)
                 .max()
                 .orElse(0.0);
         return Math.round(maxWinRate);
@@ -218,65 +217,6 @@ public class StatisticsManager implements DataExtension {
                         e.getValue().totalDamageDealt / e.getValue().totalGames))
                 .map(Map.Entry::getKey)
                 .orElse("None");
-    }
-
-    public static class PathwayStats implements Serializable, ConfigurationSerializable {
-        int wins = 0;
-        int losses = 0;
-        int totalGames = 0;
-        double totalDamageDealt = 0;
-        List<Integer> sequencesReached = new ArrayList<>();
-        List<Long> gameDurations = new ArrayList<>();
-        Map<String, Integer> abilityUsage = new HashMap<>();
-
-        public PathwayStats() {}
-
-        @SuppressWarnings("unchecked")
-        public PathwayStats(Map<String, Object> map) {
-            this.wins = (int) map.getOrDefault("wins", 0);
-            this.losses = (int) map.getOrDefault("losses", 0);
-            this.totalGames = (int) map.getOrDefault("totalGames", 0);
-            this.totalDamageDealt = ((Number) map.getOrDefault("totalDamageDealt", 0.0)).doubleValue();
-            this.sequencesReached = (List<Integer>) map.getOrDefault("sequencesReached", new ArrayList<>());
-            this.gameDurations = (List<Long>) map.getOrDefault("gameDurations", new ArrayList<>());
-            this.abilityUsage = (Map<String, Integer>) map.getOrDefault("abilityUsage", new HashMap<>());
-        }
-
-        double getAverageSequence() {
-            if (sequencesReached.isEmpty()) return 9.0;
-            return 9.0 - sequencesReached.stream()
-                    .mapToInt(Integer::intValue)
-                    .average()
-                    .orElse(0.0);
-        }
-
-        double getAverageGameDuration() {
-            if (gameDurations.isEmpty()) return 0;
-            return gameDurations.stream()
-                    .mapToLong(Long::longValue)
-                    .average()
-                    .orElse(0.0) / 1000 / 60;
-        }
-
-        String getMostUsedAbility() {
-            return abilityUsage.entrySet().stream()
-                    .max(Map.Entry.comparingByValue())
-                    .map(Map.Entry::getKey)
-                    .orElse("None");
-        }
-
-        @Override
-        public @NotNull Map<String, Object> serialize() {
-            Map<String, Object> map = new HashMap<>();
-            map.put("wins", wins);
-            map.put("losses", losses);
-            map.put("totalGames", totalGames);
-            map.put("totalDamageDealt", totalDamageDealt);
-            map.put("sequencesReached", sequencesReached);
-            map.put("gameDurations", gameDurations);
-            map.put("abilityUsage", abilityUsage);
-            return map;
-        }
     }
 
     public Map<String, PathwayStats> getPathwayStatistics() {
