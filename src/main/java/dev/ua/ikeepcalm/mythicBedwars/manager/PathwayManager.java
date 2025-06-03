@@ -44,6 +44,14 @@ public class PathwayManager {
         return null;
     }
 
+    public Set<Team> getAllParticipatingTeams(Arena arena) {
+        Map<Team, String> teamPathways = arenaPathways.get(arena.getName());
+        if (teamPathways != null) {
+            return teamPathways.keySet();
+        }
+        return Collections.emptySet();
+    }
+
     public void initializePlayerMagic(Player player, Arena arena, Team team) {
         String pathway = getTeamPathway(arena, team);
         if (pathway == null) return;

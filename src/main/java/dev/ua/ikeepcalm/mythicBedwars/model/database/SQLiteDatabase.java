@@ -71,6 +71,13 @@ public class SQLiteDatabase {
                         )
                     """);
 
+            stmt.executeUpdate("""
+                        CREATE TABLE IF NOT EXISTS global_stats (
+                            key VARCHAR(64) PRIMARY KEY,
+                            value BIGINT DEFAULT 0
+                        )
+                    """);
+
             stmt.executeUpdate("CREATE INDEX IF NOT EXISTS idx_sequences_pathway ON sequences_reached(pathway)");
             stmt.executeUpdate("CREATE INDEX IF NOT EXISTS idx_durations_pathway ON game_durations(pathway)");
         }
@@ -146,6 +153,8 @@ public class SQLiteDatabase {
                     durStmt.executeBatch();
                     abilityStmt.executeBatch();
                 }
+
+                saveGlobalStats();
 
                 connection.commit();
                 plugin.getLogger().info("Statistics saved asynchronously to SQLite database.");
@@ -233,6 +242,8 @@ public class SQLiteDatabase {
                 abilityStmt.executeBatch();
             }
 
+            saveGlobalStats();
+
             connection.commit();
             plugin.getLogger().info("Statistics saved to SQLite database.");
         } catch (SQLException e) {
@@ -256,13 +267,23 @@ public class SQLiteDatabase {
         }
     }
 
+    private void saveGlobalStats() throws SQLException {
+        String upsertGlobal = "INSERT OR REPLACE INTO global_stats (key, value) VALUES (?, ?)";
+        try (PreparedStatement stmt = connection.prepareStatement(upsertGlobal)) {
+            long totalGames = plugin.getStatisticsManager().totalGames();
+            stmt.setString(1, "total_unique_games");
+            stmt.setLong(2, totalGames);
+            stmt.executeUpdate();
+        }
+    }
+
     public CompletableFuture<Map<String, PathwayStats>> loadStatistics() {
         return CompletableFuture.supplyAsync(() -> {
             Map<String, PathwayStats> result = new HashMap<>();
             try {
                 if (connection == null || connection.isClosed()) {
                     plugin.getLogger().log(Level.SEVERE, "Database connection is not available for loading statistics.");
-                    return result; // Return empty map if no connection
+                    return result;
                 }
 
                 String selectStats = "SELECT * FROM pathway_stats";

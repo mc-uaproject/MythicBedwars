@@ -18,13 +18,16 @@ import dev.ua.ikeepcalm.mythicBedwars.model.database.PathwayStats;
 
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 @PluginInfo(name = "MythicBedwars", iconName = "magic", iconFamily = Family.SOLID, color = Color.PURPLE)
 public class StatisticsManager implements DataExtension {
 
     private final Map<String, PathwayStats> pathwayStatistics = new ConcurrentHashMap<>();
     private final MythicBedwars plugin;
+    private final AtomicLong totalUniqueGames = new AtomicLong(0);
 
     public StatisticsManager(MythicBedwars plugin) {
         this.plugin = plugin;
@@ -39,21 +42,25 @@ public class StatisticsManager implements DataExtension {
     }
 
     public void recordGameEnd(Arena arena, Team winningTeam) {
-        String winningPathway = plugin.getArenaPathwayManager().getTeamPathway(arena, winningTeam);
-        if (winningPathway != null) {
-            PathwayStats stats = pathwayStatistics.computeIfAbsent(winningPathway, k -> new PathwayStats());
-            stats.wins++;
-            stats.totalGames++;
+        Set<Team> allParticipatingTeams = plugin.getArenaPathwayManager().getAllParticipatingTeams(arena);
+
+        if (allParticipatingTeams.isEmpty()) {
+            return;
         }
 
-        for (Team team : arena.getAliveTeams()) {
-            if (team != winningTeam) {
-                String pathway = plugin.getArenaPathwayManager().getTeamPathway(arena, team);
-                if (pathway != null) {
-                    PathwayStats stats = pathwayStatistics.computeIfAbsent(pathway, k -> new PathwayStats());
+        totalUniqueGames.incrementAndGet();
+
+        for (Team team : allParticipatingTeams) {
+            String pathway = plugin.getArenaPathwayManager().getTeamPathway(arena, team);
+            if (pathway != null) {
+                PathwayStats stats = pathwayStatistics.computeIfAbsent(pathway, k -> new PathwayStats());
+
+                if (team.equals(winningTeam)) {
+                    stats.wins++;
+                } else {
                     stats.losses++;
-                    stats.totalGames++;
                 }
+                stats.totalGames++;
             }
         }
     }
@@ -64,11 +71,16 @@ public class StatisticsManager implements DataExtension {
     }
 
     public void recordGameDuration(Arena arena, long durationMillis) {
-        for (Team team : arena.getAliveTeams()) {
-            String pathway = plugin.getArenaPathwayManager().getTeamPathway(arena, team);
-            if (pathway != null) {
-                PathwayStats stats = pathwayStatistics.computeIfAbsent(pathway, k -> new PathwayStats());
-                stats.gameDurations.add(durationMillis);
+        Set<Team> allParticipatingTeams = plugin.getArenaPathwayManager().getAllParticipatingTeams(arena);
+
+        if (!allParticipatingTeams.isEmpty()) {
+            for (Team team : allParticipatingTeams) {
+                String pathway = plugin.getArenaPathwayManager().getTeamPathway(arena, team);
+                if (pathway != null) {
+                    PathwayStats stats = pathwayStatistics.computeIfAbsent(pathway, k -> new PathwayStats());
+                    stats.gameDurations.add(durationMillis);
+                    break;
+                }
             }
         }
     }
@@ -139,15 +151,13 @@ public class StatisticsManager implements DataExtension {
 
     @NumberProvider(
             text = "Total Games Played",
-            description = "Total number of MythicBedwars games played",
+            description = "Total number of unique MythicBedwars games played",
             priority = 100,
             iconName = "gamepad",
             iconColor = Color.PURPLE
     )
     public long totalGames() {
-        return pathwayStatistics.values().stream()
-                .mapToLong(stats -> stats.totalGames)
-                .sum() / Math.max(1, pathwayStatistics.size());
+        return totalUniqueGames.get();
     }
 
     @StringProvider(
@@ -228,5 +238,12 @@ public class StatisticsManager implements DataExtension {
         if (pathwayStatistics != null) {
             this.pathwayStatistics.putAll(pathwayStatistics);
         }
+
+        long maxGames = pathwayStatistics != null ?
+                pathwayStatistics.values().stream()
+                        .mapToLong(stats -> stats.gameDurations.size())
+                        .max()
+                        .orElse(0) : 0;
+        totalUniqueGames.set(maxGames);
     }
 }

@@ -56,6 +56,7 @@ public class ArenaListener implements Listener {
     public void onArenaEnd(ArenaUnloadEvent event) {
         Arena arena = event.getArena();
         plugin.getArenaPathwayManager().cleanupArena(arena);
+        arenaStartTimes.remove(arena.getName());
     }
 
     @EventHandler
@@ -63,7 +64,7 @@ public class ArenaListener implements Listener {
         Arena arena = event.getArena();
         Team winner = event.getWinnerTeam();
 
-        if (winner != null && plugin.getStatisticsManager() != null) {
+        if (plugin.getStatisticsManager() != null) {
             plugin.getStatisticsManager().recordGameEnd(arena, winner);
         }
     }
