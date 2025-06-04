@@ -1,4 +1,9 @@
 # MythicBedwars Configuration
+
+# Global plugin settings
+global:
+  enabled: true
+
 # Acting progression multipliers
 acting:
   # Base amount of acting gained per second
@@ -12,5 +17,34 @@ acting:
   # Multiplier for breaking enemy beds
   bed-break-multiplier: 10.0
 
+# Pathway settings
+pathways:
+  # Automatically balance pathway assignments based on win rates
+  auto-balance: true
+  # Threshold for considering a pathway overpowered/underpowered (10% = 0.1)
+  balance-threshold: 0.1
+  # Minimum games required before a pathway is included in balancing calculations
+  min-games-for-balance: 3
+  # List of disabled pathways (pathway names)
+  disabled: []
+
+# Spectator features
+spectator:
+  # Enable magical spectator features
+  enabled: true
+  # Default settings for new spectators
+  hud-default: true
+  actionbar-default: true
+  detailed-default: false
+  # Update interval in ticks (20 = 1 second)
+  update-interval-ticks: 20
+
 statistics:
   save-interval-seconds: 300
+
+# Arena-specific settings (optional overrides)
+arenas:
+# Example:
+# arena-name:
+#   enabled: true
+#   spectator-features: true

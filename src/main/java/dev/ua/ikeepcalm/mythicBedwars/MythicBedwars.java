@@ -3,23 +3,28 @@ package dev.ua.ikeepcalm.mythicBedwars;
 import com.djrapitops.plan.capability.CapabilityService;
 import com.djrapitops.plan.extension.ExtensionService;
 import de.marcely.bedwars.api.BedwarsAPI;
-import dev.ua.ikeepcalm.mythicBedwars.listener.ArenaListener;
-import dev.ua.ikeepcalm.mythicBedwars.listener.DamageListener;
-import dev.ua.ikeepcalm.mythicBedwars.listener.PlayerListener;
-import dev.ua.ikeepcalm.mythicBedwars.listener.ServerShutdownListener;
+import de.marcely.bedwars.api.arena.Arena;
+import dev.ua.ikeepcalm.coi.pathways.Pathways;
+import dev.ua.ikeepcalm.mythicBedwars.command.SpectatorCommand;
+import dev.ua.ikeepcalm.mythicBedwars.listener.*;
 import dev.ua.ikeepcalm.mythicBedwars.manager.*;
 import dev.ua.ikeepcalm.mythicBedwars.model.database.DatabaseMigration;
 import dev.ua.ikeepcalm.mythicBedwars.model.database.PathwayStats;
 import dev.ua.ikeepcalm.mythicBedwars.model.database.SQLiteDatabase;
+import dev.ua.ikeepcalm.mythicBedwars.model.feature.PathwayBalancer;
 import dev.ua.ikeepcalm.mythicBedwars.runnable.ActingProgressionTask;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 public final class MythicBedwars extends JavaPlugin {
 
@@ -29,9 +34,13 @@ public final class MythicBedwars extends JavaPlugin {
     private PathwayManager pathwayManager;
     private ShopManager shopManager;
     private StatisticsManager statisticsManager;
+    private CommandManager commandManager;
+    private PathwayBalancer pathwayBalancer;
+    private SpectatorManager spectatorManager;
+
     private SQLiteDatabase database;
-    private BukkitTask periodicSaveTask; // Added field for the task
-    private int saveIntervalSeconds; // Added field for config value
+    private BukkitTask periodicSaveTask;
+    private int saveIntervalSeconds;
 
     @Override
     public void onEnable() {
@@ -79,6 +88,20 @@ public final class MythicBedwars extends JavaPlugin {
         database = new SQLiteDatabase(this);
         database.initialize();
 
+        pathwayBalancer = new PathwayBalancer(this);
+        commandManager = new CommandManager(this);
+        spectatorManager = new SpectatorManager(this);
+
+        Objects.requireNonNull(getCommand("mythicbedwars")).setExecutor(commandManager);
+        Objects.requireNonNull(getCommand("mythicbedwars")).setTabCompleter(commandManager);
+
+        Objects.requireNonNull(getCommand("mb")).setExecutor(commandManager);
+        Objects.requireNonNull(getCommand("mb")).setTabCompleter(commandManager);
+
+        SpectatorCommand spectatorCommand = new SpectatorCommand(this);
+        Objects.requireNonNull(getCommand("mbspec")).setExecutor(spectatorCommand);
+        Objects.requireNonNull(getCommand("mbspec")).setTabCompleter(spectatorCommand);
+
         statisticsManager = new StatisticsManager(this);
 
         CompletableFuture<Void> loadingFuture = loadStatistics().thenRun(() -> {
@@ -116,6 +139,11 @@ public final class MythicBedwars extends JavaPlugin {
         if (periodicSaveTask != null && !periodicSaveTask.isCancelled()) {
             periodicSaveTask.cancel();
             getLogger().info("Cancelled periodic statistics save task.");
+        }
+
+        if (spectatorManager != null) {
+            spectatorManager.shutdown();
+            getLogger().info("Spectator manager shut down.");
         }
 
         if (statisticsManager != null && database != null && database.isConnected()) {
@@ -169,6 +197,7 @@ public final class MythicBedwars extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new PlayerListener(this), this);
         Bukkit.getPluginManager().registerEvents(new DamageListener(this), this);
         Bukkit.getPluginManager().registerEvents(new ServerShutdownListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new SpectatorListener(this), this);
     }
 
     private void registerShopItems() {
@@ -207,6 +236,10 @@ public final class MythicBedwars extends JavaPlugin {
         return instance;
     }
 
+    public PathwayBalancer getPathwayBalancer() {
+        return pathwayBalancer;
+    }
+
     public ConfigManager getConfigManager() {
         return configManager;
     }
@@ -225,5 +258,23 @@ public final class MythicBedwars extends JavaPlugin {
 
     public StatisticsManager getStatisticsManager() {
         return statisticsManager;
+    }
+
+    public CommandManager getCommandManager() {
+        return commandManager;
+    }
+
+    public SpectatorManager getSpectatorManager() {
+        return spectatorManager;
+    }
+
+    public List<String> getArenaNames() {
+        return BedwarsAPI.getGameAPI().getArenas().stream()
+                .map(Arena::getName)
+                .collect(Collectors.toList());
+    }
+
+    public List<String> getAvailablePathways() {
+        return new ArrayList<>(Pathways.allPathways.keySet());
     }
 }

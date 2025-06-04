@@ -9,3 +9,24 @@ depend:
   - CircleOfImagination
 softdepend:
   - Plan
+commands:
+  mythicbedwars:
+    description: "Main MythicBedwars command"
+    usage: "/mythicbedwars <toggle|reload|stats|arena>"
+    permission: mythicbedwars.admin
+    aliases: [mb, mbw]
+  mbspec:
+    description: "MythicBedwars spectator commands"
+    usage: "/mbspec <toggle|target|teams|inspect|settings>"
+    permission: mythicbedwars.spectator
+    aliases: [ mbspectator, mythicspec ]
+permissions:
+  mythicbedwars.admin:
+    description: "Access to all MythicBedwars admin commands"
+    default: op
+  mythicbedwars.user:
+    description: "Basic MythicBedwars permissions"
+    default: true
+  mythicbedwars.spectator:
+    description: "Access to MythicBedwars spectator features"
+    default: true

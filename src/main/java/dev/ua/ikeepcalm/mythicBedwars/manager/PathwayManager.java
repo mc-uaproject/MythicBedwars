@@ -5,6 +5,8 @@ import de.marcely.bedwars.api.arena.Team;
 import dev.ua.ikeepcalm.coi.CircleOfImagination;
 import dev.ua.ikeepcalm.coi.domain.beyonder.model.Beyonder;
 import dev.ua.ikeepcalm.coi.pathways.Pathways;
+import dev.ua.ikeepcalm.mythicBedwars.MythicBedwars;
+import dev.ua.ikeepcalm.mythicBedwars.model.feature.PathwayBalancer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -19,21 +21,26 @@ public class PathwayManager {
     private final Map<UUID, String> playerArenaCache = new ConcurrentHashMap<>();
 
     public void assignPathwaysToTeams(Arena arena) {
-        Map<Team, String> teamPathways = new HashMap<>();
-        List<String> availablePathways = new ArrayList<>(Pathways.allPathways.keySet());
-        Collections.shuffle(availablePathways);
+        PathwayBalancer balancer = MythicBedwars.getInstance().getPathwayBalancer();
+        Map<Team, String> teamPathways = balancer.assignBalancedPathways(arena);
+        arenaPathways.put(arena.getName(), teamPathways);
+    }
 
-        int index = 0;
-        for (Team team : arena.getAliveTeams()) {
-            if (index >= availablePathways.size()) {
-                Collections.shuffle(availablePathways);
-                index = 0;
-            }
-            teamPathways.put(team, availablePathways.get(index));
-            index++;
+    public String getBalancingInfo(Arena arena) {
+        Map<Team, String> teamPathways = arenaPathways.get(arena.getName());
+        if (teamPathways == null || teamPathways.isEmpty()) {
+            return "No pathways assigned yet";
         }
 
-        arenaPathways.put(arena.getName(), teamPathways);
+        StringBuilder info = new StringBuilder("Pathway assignments for " + arena.getName() + ":\n");
+        for (Map.Entry<Team, String> entry : teamPathways.entrySet()) {
+            info.append("- ").append(entry.getKey().getDisplayName()).append(": ").append(entry.getValue()).append("\n");
+        }
+
+        boolean isBalanced = MythicBedwars.getInstance().getConfigManager().isPathwayBalancingEnabled();
+        info.append("Balancing: ").append(isBalanced ? "Enabled" : "Disabled");
+
+        return info.toString();
     }
 
     public String getTeamPathway(Arena arena, Team team) {
