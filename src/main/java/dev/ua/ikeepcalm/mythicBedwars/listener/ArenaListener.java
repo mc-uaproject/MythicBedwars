@@ -17,12 +17,15 @@ import dev.ua.ikeepcalm.mythicBedwars.MythicBedwars;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class ArenaListener implements Listener {
 
+    private static final Logger log = LoggerFactory.getLogger(ArenaListener.class);
     private final MythicBedwars plugin;
     private final Map<String, Long> arenaStartTimes = new HashMap<>();
 
@@ -34,12 +37,21 @@ public class ArenaListener implements Listener {
     public void onArenaStatusChange(ArenaStatusChangeEvent event) {
         Arena arena = event.getArena();
 
+        log.info("Arena status: {}", event.getNewStatus());
+        log.info("Before was: {}", event.getOldStatus());
+
         if (event.getNewStatus() == ArenaStatus.LOBBY && event.getOldStatus() != ArenaStatus.LOBBY) {
-            plugin.getArenaPathwayManager().assignPathwaysToTeams(arena);
+            log.info("Starting vote for the magic");
+            plugin.getVotingManager().startVoting(arena);
         }
 
         if (event.getNewStatus() == ArenaStatus.RUNNING) {
             arenaStartTimes.put(arena.getName(), System.currentTimeMillis());
+            plugin.getVotingManager().endVoting(arena);
+
+            if (plugin.getVotingManager().isMagicEnabled(arena.getName())) {
+                plugin.getArenaPathwayManager().assignPathwaysToTeams(arena);
+            }
         }
 
         if (event.getNewStatus() == ArenaStatus.STOPPED) {
@@ -49,6 +61,7 @@ public class ArenaListener implements Listener {
                 plugin.getStatisticsManager().recordGameDuration(arena, duration);
             }
             plugin.getArenaPathwayManager().cleanupArena(arena);
+            plugin.getVotingManager().cleanupArena(arena.getName());
         }
     }
 
@@ -73,6 +86,13 @@ public class ArenaListener implements Listener {
     public void onPlayerJoinArena(PlayerJoinArenaEvent event) {
         Player player = event.getPlayer();
         Arena arena = event.getArena();
+
+        log.info("Status: " + arena.getStatus());
+
+        if (arena.getStatus() == ArenaStatus.LOBBY) {
+            log.info("Starting vote for the magic");
+            plugin.getVotingManager().giveVotingItems(player, arena);
+        }
 
         if (arena.getStatus() == ArenaStatus.RUNNING) {
             Team team = arena.getPlayerTeam(player);

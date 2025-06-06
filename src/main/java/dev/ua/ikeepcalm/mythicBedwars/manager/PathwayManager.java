@@ -4,9 +4,8 @@ import de.marcely.bedwars.api.arena.Arena;
 import de.marcely.bedwars.api.arena.Team;
 import dev.ua.ikeepcalm.coi.CircleOfImagination;
 import dev.ua.ikeepcalm.coi.domain.beyonder.model.Beyonder;
-import dev.ua.ikeepcalm.coi.pathways.Pathways;
 import dev.ua.ikeepcalm.mythicBedwars.MythicBedwars;
-import dev.ua.ikeepcalm.mythicBedwars.model.feature.PathwayBalancer;
+import dev.ua.ikeepcalm.mythicBedwars.model.feature.balancer.PathwayBalancer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 

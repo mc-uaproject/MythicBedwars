@@ -1,4 +1,4 @@
-package dev.ua.ikeepcalm.mythicBedwars.model.feature;
+package dev.ua.ikeepcalm.mythicBedwars.model.feature.balancer;
 
 import de.marcely.bedwars.api.arena.Arena;
 import de.marcely.bedwars.api.arena.Team;

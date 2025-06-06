@@ -26,7 +26,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (!sender.hasPermission("mythicbedwars.admin")) {
-            sender.sendMessage(Component.text("No permission!", NamedTextColor.RED));
+            sender.sendMessage(Component.text(plugin.getLocaleManager().getMessage("magic.commands.no_permission"), NamedTextColor.RED));
             return true;
         }
 

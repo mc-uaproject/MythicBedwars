@@ -5,13 +5,16 @@ import com.djrapitops.plan.extension.ExtensionService;
 import de.marcely.bedwars.api.BedwarsAPI;
 import de.marcely.bedwars.api.arena.Arena;
 import dev.ua.ikeepcalm.coi.pathways.Pathways;
-import dev.ua.ikeepcalm.mythicBedwars.command.SpectatorCommand;
+import dev.ua.ikeepcalm.mythicBedwars.model.feature.spectator.SpectatorCommand;
 import dev.ua.ikeepcalm.mythicBedwars.listener.*;
 import dev.ua.ikeepcalm.mythicBedwars.manager.*;
+import dev.ua.ikeepcalm.mythicBedwars.model.feature.spectator.SpectatorManager;
+import dev.ua.ikeepcalm.mythicBedwars.model.feature.vote.VotingListener;
+import dev.ua.ikeepcalm.mythicBedwars.model.feature.vote.VotingManager;
 import dev.ua.ikeepcalm.mythicBedwars.model.database.DatabaseMigration;
 import dev.ua.ikeepcalm.mythicBedwars.model.database.PathwayStats;
 import dev.ua.ikeepcalm.mythicBedwars.model.database.SQLiteDatabase;
-import dev.ua.ikeepcalm.mythicBedwars.model.feature.PathwayBalancer;
+import dev.ua.ikeepcalm.mythicBedwars.model.feature.balancer.PathwayBalancer;
 import dev.ua.ikeepcalm.mythicBedwars.runnable.ActingProgressionTask;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
@@ -37,6 +40,7 @@ public final class MythicBedwars extends JavaPlugin {
     private CommandManager commandManager;
     private PathwayBalancer pathwayBalancer;
     private SpectatorManager spectatorManager;
+    private VotingManager votingManager;
 
     private SQLiteDatabase database;
     private BukkitTask periodicSaveTask;
@@ -91,6 +95,7 @@ public final class MythicBedwars extends JavaPlugin {
         pathwayBalancer = new PathwayBalancer(this);
         commandManager = new CommandManager(this);
         spectatorManager = new SpectatorManager(this);
+        votingManager = new VotingManager(this);
 
         Objects.requireNonNull(getCommand("mythicbedwars")).setExecutor(commandManager);
         Objects.requireNonNull(getCommand("mythicbedwars")).setTabCompleter(commandManager);
@@ -198,6 +203,7 @@ public final class MythicBedwars extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new DamageListener(this), this);
         Bukkit.getPluginManager().registerEvents(new ServerShutdownListener(this), this);
         Bukkit.getPluginManager().registerEvents(new SpectatorListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new VotingListener(this), this);
     }
 
     private void registerShopItems() {
@@ -262,6 +268,10 @@ public final class MythicBedwars extends JavaPlugin {
 
     public CommandManager getCommandManager() {
         return commandManager;
+    }
+
+    public VotingManager getVotingManager() {
+        return votingManager;
     }
 
     public SpectatorManager getSpectatorManager() {

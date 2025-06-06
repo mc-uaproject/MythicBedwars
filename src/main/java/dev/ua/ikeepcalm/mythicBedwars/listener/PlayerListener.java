@@ -33,6 +33,12 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onSpecificAbilityUsage(AbilityUsageEvent event) {
+        Arena arena = BedwarsAPI.getGameAPI().getArenaByPlayer(event.getPlayer());
+        if (arena == null || !plugin.getVotingManager().isMagicEnabled(arena.getName())) {
+            event.setCancelled(true);
+            return;
+        }
+
         if (!plugin.getArenaPathwayManager().hasPlayerMagic(event.getPlayer())) {
             return;
         }

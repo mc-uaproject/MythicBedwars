@@ -1,9 +1,8 @@
-package dev.ua.ikeepcalm.mythicBedwars.command;
+package dev.ua.ikeepcalm.mythicBedwars.model.feature.spectator;
 
 import de.marcely.bedwars.api.BedwarsAPI;
 import de.marcely.bedwars.api.arena.Arena;
 import dev.ua.ikeepcalm.mythicBedwars.MythicBedwars;
-import dev.ua.ikeepcalm.mythicBedwars.manager.SpectatorManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -31,12 +30,12 @@ public class SpectatorCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(Component.text("This command can only be used by players!", NamedTextColor.RED));
+            sender.sendMessage(Component.text(plugin.getLocaleManager().getMessage("magic.commands.player_only"), NamedTextColor.RED));
             return true;
         }
 
         if (!player.hasPermission("mythicbedwars.spectator")) {
-            player.sendMessage(Component.text("No permission!", NamedTextColor.RED));
+            sender.sendMessage(Component.text(plugin.getLocaleManager().getMessage("magic.commands.no_permission"), NamedTextColor.RED));
             return true;
         }
 
