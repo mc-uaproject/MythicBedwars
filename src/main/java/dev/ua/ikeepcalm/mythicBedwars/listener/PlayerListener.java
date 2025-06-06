@@ -10,6 +10,8 @@ import dev.ua.ikeepcalm.coi.domain.potion.model.SequencePotion;
 import dev.ua.ikeepcalm.coi.pathways.darkness.abilities.nightmare.Nightmare;
 import dev.ua.ikeepcalm.coi.pathways.demoness.abilities.ThreadHands;
 import dev.ua.ikeepcalm.mythicBedwars.MythicBedwars;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -34,12 +36,19 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onSpecificAbilityUsage(AbilityUsageEvent event) {
         Arena arena = BedwarsAPI.getGameAPI().getArenaByPlayer(event.getPlayer());
-        if (arena == null || !plugin.getVotingManager().isMagicEnabled(arena.getName())) {
+        if (arena == null) {
             event.setCancelled(true);
             return;
         }
 
+        if (!plugin.getVotingManager().isMagicEnabled(arena.getName())) {
+            event.setCancelled(true);
+            event.getPlayer().sendMessage(Component.text("Magic is disabled in this arena!", NamedTextColor.RED));
+            return;
+        }
+
         if (!plugin.getArenaPathwayManager().hasPlayerMagic(event.getPlayer())) {
+            event.setCancelled(true);
             return;
         }
 
@@ -74,14 +83,23 @@ public class PlayerListener implements Listener {
         Player player = event.getPlayer();
         ItemStack item = event.getItem();
 
-        if (!plugin.getArenaPathwayManager().hasPlayerMagic(player)) {
-            return;
-        }
+        Arena arena = BedwarsAPI.getGameAPI().getArenaByPlayer(player);
+        if (arena == null) return;
 
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return;
 
         if (meta.getPersistentDataContainer().has(SequencePotion.getPotionKey(), PersistentDataType.INTEGER)) {
+            if (!plugin.getVotingManager().isMagicEnabled(arena.getName())) {
+                event.setCancelled(true);
+                return;
+            }
+
+            if (!plugin.getArenaPathwayManager().hasPlayerMagic(player)) {
+                event.setCancelled(true);
+                return;
+            }
+
             Beyonder beyonder = Beyonder.of(player);
             if (beyonder != null && !beyonder.getPathways().isEmpty()) {
                 FlexiblePathway currentPathway = beyonder.getPathways().getFirst();

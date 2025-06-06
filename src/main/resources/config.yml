@@ -4,6 +4,18 @@
 global:
   enabled: true
 
+voting:
+  # Enable voting system
+  enabled: true
+  # Delay in seconds before giving voting items to players
+  item-delay: 3
+  # Show reminders to vote
+  reminders-enabled: true
+  # Interval between reminders in seconds
+  reminder-interval: 10
+  # Maximum number of reminders
+  max-reminders: 5
+
 # Acting progression multipliers
 acting:
   # Base amount of acting gained per second

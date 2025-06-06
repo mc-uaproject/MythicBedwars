@@ -5,17 +5,22 @@ import com.djrapitops.plan.extension.ExtensionService;
 import de.marcely.bedwars.api.BedwarsAPI;
 import de.marcely.bedwars.api.arena.Arena;
 import dev.ua.ikeepcalm.coi.pathways.Pathways;
-import dev.ua.ikeepcalm.mythicBedwars.model.feature.spectator.SpectatorCommand;
+import dev.ua.ikeepcalm.mythicBedwars.cmd.CommandManager;
+import dev.ua.ikeepcalm.mythicBedwars.config.ConfigLoader;
+import dev.ua.ikeepcalm.mythicBedwars.config.LocaleLoader;
+import dev.ua.ikeepcalm.mythicBedwars.domain.core.PathwayManager;
+import dev.ua.ikeepcalm.mythicBedwars.domain.core.ShopManager;
+import dev.ua.ikeepcalm.mythicBedwars.domain.core.StatisticsManager;
 import dev.ua.ikeepcalm.mythicBedwars.listener.*;
-import dev.ua.ikeepcalm.mythicBedwars.manager.*;
-import dev.ua.ikeepcalm.mythicBedwars.model.feature.spectator.SpectatorManager;
-import dev.ua.ikeepcalm.mythicBedwars.model.feature.vote.VotingListener;
-import dev.ua.ikeepcalm.mythicBedwars.model.feature.vote.VotingManager;
-import dev.ua.ikeepcalm.mythicBedwars.model.database.DatabaseMigration;
-import dev.ua.ikeepcalm.mythicBedwars.model.database.PathwayStats;
-import dev.ua.ikeepcalm.mythicBedwars.model.database.SQLiteDatabase;
-import dev.ua.ikeepcalm.mythicBedwars.model.feature.balancer.PathwayBalancer;
-import dev.ua.ikeepcalm.mythicBedwars.runnable.ActingProgressionTask;
+import dev.ua.ikeepcalm.mythicBedwars.domain.stats.db.DatabaseMigration;
+import dev.ua.ikeepcalm.mythicBedwars.domain.stats.db.PathwayStats;
+import dev.ua.ikeepcalm.mythicBedwars.domain.stats.db.SQLiteDatabase;
+import dev.ua.ikeepcalm.mythicBedwars.domain.balancer.PathwayBalancer;
+import dev.ua.ikeepcalm.mythicBedwars.cmd.impls.SpectatorCommand;
+import dev.ua.ikeepcalm.mythicBedwars.domain.spectator.SpectatorManager;
+import dev.ua.ikeepcalm.mythicBedwars.listener.VotingListener;
+import dev.ua.ikeepcalm.mythicBedwars.domain.voting.service.VotingManager;
+import dev.ua.ikeepcalm.mythicBedwars.domain.runnable.ActingProgressionTask;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -32,8 +37,8 @@ import java.util.stream.Collectors;
 public final class MythicBedwars extends JavaPlugin {
 
     private static MythicBedwars instance;
-    private ConfigManager configManager;
-    private LocaleManager localeManager;
+    private ConfigLoader configLoader;
+    private LocaleLoader localeLoader;
     private PathwayManager pathwayManager;
     private ShopManager shopManager;
     private StatisticsManager statisticsManager;
@@ -78,13 +83,13 @@ public final class MythicBedwars extends JavaPlugin {
             return;
         }
 
-        configManager = new ConfigManager(this);
-        configManager.loadConfig();
+        configLoader = new ConfigLoader(this);
+        configLoader.loadConfig();
 
-        this.saveIntervalSeconds = configManager.getAutoSaveInterval();
+        this.saveIntervalSeconds = configLoader.getAutoSaveInterval();
 
-        localeManager = new LocaleManager(this, LocaleManager.Locale.UK);
-        localeManager.loadLocales();
+        localeLoader = new LocaleLoader(this, LocaleLoader.Locale.UK);
+        localeLoader.loadLocales();
 
         pathwayManager = new PathwayManager();
         shopManager = new ShopManager(this);
@@ -246,8 +251,8 @@ public final class MythicBedwars extends JavaPlugin {
         return pathwayBalancer;
     }
 
-    public ConfigManager getConfigManager() {
-        return configManager;
+    public ConfigLoader getConfigManager() {
+        return configLoader;
     }
 
     public PathwayManager getArenaPathwayManager() {
@@ -258,8 +263,8 @@ public final class MythicBedwars extends JavaPlugin {
         return shopManager;
     }
 
-    public LocaleManager getLocaleManager() {
-        return localeManager;
+    public LocaleLoader getLocaleManager() {
+        return localeLoader;
     }
 
     public StatisticsManager getStatisticsManager() {

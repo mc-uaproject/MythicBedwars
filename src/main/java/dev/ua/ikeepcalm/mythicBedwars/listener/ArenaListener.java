@@ -37,12 +37,13 @@ public class ArenaListener implements Listener {
     public void onArenaStatusChange(ArenaStatusChangeEvent event) {
         Arena arena = event.getArena();
 
-        log.info("Arena status: {}", event.getNewStatus());
-        log.info("Before was: {}", event.getOldStatus());
+        log.info("Arena status change: {} -> {}", event.getOldStatus(), event.getNewStatus());
 
         if (event.getNewStatus() == ArenaStatus.LOBBY && event.getOldStatus() != ArenaStatus.LOBBY) {
-            log.info("Starting vote for the magic");
-            plugin.getVotingManager().startVoting(arena);
+            if (plugin.getConfigManager().isGloballyEnabled() && plugin.getConfigManager().isArenaEnabled(arena.getName())) {
+                log.info("Starting voting for arena: {}", arena.getName());
+                plugin.getVotingManager().startVoting(arena);
+            }
         }
 
         if (event.getNewStatus() == ArenaStatus.RUNNING) {
@@ -50,7 +51,10 @@ public class ArenaListener implements Listener {
             plugin.getVotingManager().endVoting(arena);
 
             if (plugin.getVotingManager().isMagicEnabled(arena.getName())) {
+                log.info("Magic is enabled for arena: {}, assigning pathways", arena.getName());
                 plugin.getArenaPathwayManager().assignPathwaysToTeams(arena);
+            } else {
+                log.info("Magic is disabled for arena: {}, skipping pathway assignment", arena.getName());
             }
         }
 
@@ -69,6 +73,7 @@ public class ArenaListener implements Listener {
     public void onArenaEnd(ArenaUnloadEvent event) {
         Arena arena = event.getArena();
         plugin.getArenaPathwayManager().cleanupArena(arena);
+        plugin.getVotingManager().cleanupArena(arena.getName());
         arenaStartTimes.remove(arena.getName());
     }
 
@@ -77,7 +82,7 @@ public class ArenaListener implements Listener {
         Arena arena = event.getArena();
         Team winner = event.getWinnerTeam();
 
-        if (plugin.getStatisticsManager() != null) {
+        if (plugin.getStatisticsManager() != null && plugin.getVotingManager().isMagicEnabled(arena.getName())) {
             plugin.getStatisticsManager().recordGameEnd(arena, winner);
         }
     }
@@ -87,14 +92,22 @@ public class ArenaListener implements Listener {
         Player player = event.getPlayer();
         Arena arena = event.getArena();
 
-        log.info("Status: " + arena.getStatus());
+        log.info("Player {} joined arena {} with status: {}", player.getName(), arena.getName(), arena.getStatus());
 
         if (arena.getStatus() == ArenaStatus.LOBBY) {
-            log.info("Starting vote for the magic");
-            plugin.getVotingManager().giveVotingItems(player, arena);
+            if (plugin.getVotingManager().hasActiveVoting(arena.getName())) {
+                log.info("Giving voting items to late-joining player: {}", player.getName());
+                plugin.getVotingManager().giveVotingItems(player, arena);
+            } else if (plugin.getConfigManager().isGloballyEnabled() && plugin.getConfigManager().isArenaEnabled(arena.getName())) {
+                if (!plugin.getVotingManager().hasActiveVoting(arena.getName())) {
+                    log.info("First player joined, starting voting for arena: {}", arena.getName());
+                    plugin.getVotingManager().startVoting(arena);
+                    plugin.getVotingManager().giveVotingItems(player, arena);
+                }
+            }
         }
 
-        if (arena.getStatus() == ArenaStatus.RUNNING) {
+        if (arena.getStatus() == ArenaStatus.RUNNING && plugin.getVotingManager().isMagicEnabled(arena.getName())) {
             Team team = arena.getPlayerTeam(player);
             if (team != null) {
                 if (plugin.getArenaPathwayManager().isPlayerInArena(player, arena.getName())) {
@@ -112,6 +125,10 @@ public class ArenaListener implements Listener {
     public void onPlayerQuit(PlayerQuitArenaEvent event) {
         Player player = event.getPlayer();
         Arena arena = event.getArena();
+
+        if (arena.getStatus() == ArenaStatus.LOBBY) {
+            plugin.getVotingManager().removeVotingItems(player);
+        }
 
         boolean isGameEnding = event.getReason() == KickReason.GAME_LOSE
                 || event.getReason() == KickReason.GAME_END
@@ -133,7 +150,7 @@ public class ArenaListener implements Listener {
         Arena arena = event.getArena();
         Team team = event.getNewTeam();
 
-        if (arena.getStatus() == ArenaStatus.RUNNING && team != null) {
+        if (arena.getStatus() == ArenaStatus.RUNNING && team != null && plugin.getVotingManager().isMagicEnabled(arena.getName())) {
             plugin.getArenaPathwayManager().initializePlayerMagic(player, arena, team);
         }
     }
@@ -142,6 +159,9 @@ public class ArenaListener implements Listener {
     public void onPlayerKill(PlayerKillPlayerEvent event) {
         Player killer = event.getKiller();
         if (killer == null) return;
+
+        Arena arena = event.getArena();
+        if (!plugin.getVotingManager().isMagicEnabled(arena.getName())) return;
 
         Beyonder beyonder = Beyonder.of(killer);
         if (beyonder == null) return;
@@ -161,6 +181,9 @@ public class ArenaListener implements Listener {
     public void onBedBreak(ArenaBedBreakEvent event) {
         Player breaker = event.getPlayer();
         if (breaker == null) return;
+
+        Arena arena = event.getArena();
+        if (!plugin.getVotingManager().isMagicEnabled(arena.getName())) return;
 
         Beyonder beyonder = Beyonder.of(breaker);
         if (beyonder == null) return;
