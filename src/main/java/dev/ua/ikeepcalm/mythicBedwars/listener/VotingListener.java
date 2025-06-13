@@ -35,10 +35,12 @@ public class VotingListener implements Listener {
         Arena arena = BedwarsAPI.getGameAPI().getArenaByPlayer(player);
         if (arena == null) return;
 
-        if (!plugin.getVotingManager().hasActiveVoting(arena.getName())) return;
+        if (!plugin.getVotingManager().hasActiveVoting(arena.getName())) {
+            player.sendMessage(Component.text(plugin.getLocaleManager().getMessage("magic.voting.not_active"), NamedTextColor.RED));
+            return;
+        }
 
         event.setCancelled(true);
-
         plugin.getVotingManager().getVotingGUI().openVotingGUI(player);
     }
     

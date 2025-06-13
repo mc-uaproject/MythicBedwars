@@ -55,9 +55,7 @@ public class VotingSession {
 
     public void end() {
         if (!active) return;
-
         active = false;
-
         this.reminderTask.cancel();
 
         int totalPlayers = arena.getPlayers().size();
@@ -71,16 +69,23 @@ public class VotingSession {
             return;
         }
 
-        double yesPercentage = (double) yesVotes / totalVotes;
-        double noPercentage = (double) noVotes / totalVotes;
+        double yesPercentageOfAll = (double) yesVotes / totalPlayers;
+        double noPercentageOfAll = (double) noVotes / totalPlayers;
 
-        if (yesPercentage > 0.5) {
+        if (yesPercentageOfAll > 0.5) {
             magicEnabled = true;
-        } else if (noPercentage > 0.5) {
+        } else if (noPercentageOfAll > 0.5) {
             magicEnabled = false;
         } else {
-            magicEnabled = Math.random() < 0.5;
-            broadcastMessage("magic.voting.tie_breaker", NamedTextColor.YELLOW);
+            double yesPercentageOfVoters = (double) yesVotes / totalVotes;
+            if (yesPercentageOfVoters > 0.5) {
+                magicEnabled = true;
+            } else if (yesPercentageOfVoters < 0.5) {
+                magicEnabled = false;
+            } else {
+                magicEnabled = true;
+                broadcastMessage("magic.voting.tie_breaker", NamedTextColor.YELLOW);
+            }
         }
 
         if (magicEnabled) {

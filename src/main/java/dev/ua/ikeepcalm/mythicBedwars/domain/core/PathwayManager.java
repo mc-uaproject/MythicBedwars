@@ -60,7 +60,11 @@ public class PathwayManager {
 
     public void initializePlayerMagic(Player player, Arena arena, Team team) {
         String pathway = getTeamPathway(arena, team);
-        if (pathway == null) return;
+        if (pathway == null) {
+            MythicBedwars.getInstance().getLogger().warning("No pathway assigned to team " + team.getDisplayName() +
+                    " in arena " + arena.getName() + " for player " + player.getName());
+            return;
+        }
 
         UUID playerId = player.getUniqueId();
 

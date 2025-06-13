@@ -53,6 +53,13 @@ public class ArenaListener implements Listener {
             if (plugin.getVotingManager().isMagicEnabled(arena.getName())) {
                 log.info("Magic is enabled for arena: {}, assigning pathways", arena.getName());
                 plugin.getArenaPathwayManager().assignPathwaysToTeams(arena);
+
+                for (Player player : arena.getPlayers()) {
+                    Team team = arena.getPlayerTeam(player);
+                    if (team != null) {
+                        plugin.getArenaPathwayManager().initializePlayerMagic(player, arena, team);
+                    }
+                }
             } else {
                 log.info("Magic is disabled for arena: {}, skipping pathway assignment", arena.getName());
             }
