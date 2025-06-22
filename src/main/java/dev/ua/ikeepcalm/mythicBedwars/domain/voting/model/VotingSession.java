@@ -72,19 +72,16 @@ public class VotingSession {
         double yesPercentageOfAll = (double) yesVotes / totalPlayers;
         double noPercentageOfAll = (double) noVotes / totalPlayers;
 
-        if (yesPercentageOfAll > 0.5) {
+        if (yesPercentageOfAll >= 0.5) {
             magicEnabled = true;
         } else if (noPercentageOfAll > 0.5) {
             magicEnabled = false;
         } else {
             double yesPercentageOfVoters = (double) yesVotes / totalVotes;
-            if (yesPercentageOfVoters > 0.5) {
+            if (yesPercentageOfVoters >= 0.5) {
                 magicEnabled = true;
-            } else if (yesPercentageOfVoters < 0.5) {
-                magicEnabled = false;
             } else {
-                magicEnabled = true;
-                broadcastMessage("magic.voting.tie_breaker", NamedTextColor.YELLOW);
+                magicEnabled = false;
             }
         }
 
