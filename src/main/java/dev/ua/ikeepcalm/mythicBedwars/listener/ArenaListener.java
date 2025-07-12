@@ -54,10 +54,21 @@ public class ArenaListener implements Listener {
                 log.info("Magic is enabled for arena: {}, assigning pathways", arena.getName());
                 plugin.getArenaPathwayManager().assignPathwaysToTeams(arena);
 
+                // Initialize magic for all players, including those assigned to teams during game start
                 for (Player player : arena.getPlayers()) {
                     Team team = arena.getPlayerTeam(player);
                     if (team != null) {
                         plugin.getArenaPathwayManager().initializePlayerMagic(player, arena, team);
+                    } else {
+                        // Player doesn't have a team yet, schedule a delayed check
+                        log.debug("Player {} has no team at game start, scheduling delayed magic initialization", player.getName());
+                        org.bukkit.Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                            Team delayedTeam = arena.getPlayerTeam(player);
+                            if (delayedTeam != null && plugin.getVotingManager().isMagicEnabled(arena.getName())) {
+                                log.info("Initializing delayed magic for player {} on team {}", player.getName(), delayedTeam.getDisplayName());
+                                plugin.getArenaPathwayManager().initializePlayerMagic(player, arena, delayedTeam);
+                            }
+                        }, 20L); // 1 second delay to allow team assignment
                     }
                 }
             } else {

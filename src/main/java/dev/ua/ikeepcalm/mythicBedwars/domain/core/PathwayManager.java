@@ -80,6 +80,9 @@ public class PathwayManager {
             if (existingData.getStoredActing() > 0) {
                 beyonder.getPathways().getFirst().setActing(existingData.getStoredActing());
             }
+            
+            existingData.resetGameStartTimeOnReconnect();
+            existingData.setActive(true);
             return;
         }
 
@@ -102,6 +105,8 @@ public class PathwayManager {
                 data.setStoredActing(beyonder.getPathways().getFirst().getActing());
                 beyonder.destroy();
             }
+
+            data.updatePlayTimeOnDisconnect();
             data.setActive(false);
         }
     }
@@ -181,6 +186,8 @@ public class PathwayManager {
         private final Map<Integer, Integer> potionsPurchased;
         private boolean active;
         private int storedActing;
+        private long gameStartTime; // Track when the player started playing in this arena
+        private long totalPlayTime; // Track total time spent in arena (excluding disconnections)
 
         public PlayerMagicData(UUID playerId, String pathway, String arenaName) {
             this.playerId = playerId;
@@ -190,6 +197,8 @@ public class PathwayManager {
             this.potionsPurchased = new HashMap<>();
             this.active = true;
             this.storedActing = 0;
+            this.gameStartTime = System.currentTimeMillis();
+            this.totalPlayTime = 0;
         }
 
         public UUID getPlayerId() {
@@ -234,6 +243,48 @@ public class PathwayManager {
 
         public int getPotionPurchaseCount(int sequence) {
             return potionsPurchased.getOrDefault(sequence, 0);
+        }
+
+        public long getGameStartTime() {
+            return gameStartTime;
+        }
+
+        public void setGameStartTime(long gameStartTime) {
+            this.gameStartTime = gameStartTime;
+        }
+
+        public long getTotalPlayTime() {
+            return totalPlayTime;
+        }
+
+        public void setTotalPlayTime(long totalPlayTime) {
+            this.totalPlayTime = totalPlayTime;
+        }
+
+        /**
+         * Updates total play time when player becomes inactive (disconnects)
+         */
+        public void updatePlayTimeOnDisconnect() {
+            if (active && gameStartTime > 0) {
+                totalPlayTime += System.currentTimeMillis() - gameStartTime;
+            }
+        }
+
+        /**
+         * Resets the game start time when player becomes active again (reconnects)
+         */
+        public void resetGameStartTimeOnReconnect() {
+            this.gameStartTime = System.currentTimeMillis();
+        }
+
+        /**
+         * Gets the effective play time including current session
+         */
+        public long getEffectivePlayTime() {
+            if (active && gameStartTime > 0) {
+                return totalPlayTime + (System.currentTimeMillis() - gameStartTime);
+            }
+            return totalPlayTime;
         }
     }
 }

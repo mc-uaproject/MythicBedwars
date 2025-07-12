@@ -36,8 +36,11 @@ public class ActingProgressionTask extends BukkitRunnable {
 
                 int sequence = beyonder.getLowestSequenceNumber();
                 double sequenceMultiplier = getSequenceMultiplier(sequence);
+                
+                long effectivePlayTime = data.getEffectivePlayTime();
+                double timeBasedMultiplier = getTimeBasedMultiplier(effectivePlayTime, sequence);
 
-                int actingAmount = (int) (baseAmount * multiplier * sequenceMultiplier);
+                int actingAmount = (int) (baseAmount * multiplier * sequenceMultiplier * timeBasedMultiplier);
 
                 for (var pathway : beyonder.getPathways()) {
                     pathway.addActing(actingAmount);
@@ -59,5 +62,42 @@ public class ActingProgressionTask extends BukkitRunnable {
             case 1 -> 0.1;
             default -> 0.05;
         };
+    }
+
+    /**
+     * Provides additional time-based multiplier to maintain fast progression for players
+     * who have been playing longer, ensuring disconnections don't reset progression speed.
+     */
+    private double getTimeBasedMultiplier(long effectivePlayTimeMs, int sequence) {
+        long playTimeMinutes = effectivePlayTimeMs / (1000 * 60);
+        
+        // For higher sequences (9-7), provide additional boost for longer play time
+        // This helps players who disconnect and reconnect maintain their fast progression
+        if (sequence >= 7) {
+            // After 5 minutes: 1.5x boost, after 10 minutes: 2.0x boost, max 2.5x at 15+ minutes
+            if (playTimeMinutes >= 15) {
+                return 2.5;
+            } else if (playTimeMinutes >= 10) {
+                return 2.0;
+            } else if (playTimeMinutes >= 5) {
+                return 1.5;
+            }
+        } else if (sequence >= 5) {
+            // For mid sequences (6-5), provide moderate boost
+            if (playTimeMinutes >= 10) {
+                return 1.8;
+            } else if (playTimeMinutes >= 5) {
+                return 1.3;
+            }
+        } else if (sequence >= 3) {
+            // For lower sequences (4-3), provide small boost to maintain progression
+            if (playTimeMinutes >= 8) {
+                return 1.4;
+            } else if (playTimeMinutes >= 4) {
+                return 1.2;
+            }
+        }
+        
+        return 1.0;
     }
 }
