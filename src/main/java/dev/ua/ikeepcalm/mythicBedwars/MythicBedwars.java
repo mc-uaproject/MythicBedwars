@@ -6,21 +6,21 @@ import de.marcely.bedwars.api.BedwarsAPI;
 import de.marcely.bedwars.api.arena.Arena;
 import dev.ua.ikeepcalm.coi.pathways.Pathways;
 import dev.ua.ikeepcalm.mythicBedwars.cmd.CommandManager;
+import dev.ua.ikeepcalm.mythicBedwars.cmd.impls.SpectatorCommand;
 import dev.ua.ikeepcalm.mythicBedwars.config.ConfigLoader;
 import dev.ua.ikeepcalm.mythicBedwars.config.LocaleLoader;
+import dev.ua.ikeepcalm.mythicBedwars.domain.balancer.PathwayBalancer;
 import dev.ua.ikeepcalm.mythicBedwars.domain.core.PathwayManager;
 import dev.ua.ikeepcalm.mythicBedwars.domain.core.ShopManager;
 import dev.ua.ikeepcalm.mythicBedwars.domain.core.StatisticsManager;
-import dev.ua.ikeepcalm.mythicBedwars.listener.*;
+import dev.ua.ikeepcalm.mythicBedwars.domain.runnable.ActingProgressionTask;
+import dev.ua.ikeepcalm.mythicBedwars.domain.runnable.PathwayVerificationTask;
+import dev.ua.ikeepcalm.mythicBedwars.domain.spectator.SpectatorManager;
 import dev.ua.ikeepcalm.mythicBedwars.domain.stats.db.DatabaseMigration;
 import dev.ua.ikeepcalm.mythicBedwars.domain.stats.db.PathwayStats;
 import dev.ua.ikeepcalm.mythicBedwars.domain.stats.db.SQLiteDatabase;
-import dev.ua.ikeepcalm.mythicBedwars.domain.balancer.PathwayBalancer;
-import dev.ua.ikeepcalm.mythicBedwars.cmd.impls.SpectatorCommand;
-import dev.ua.ikeepcalm.mythicBedwars.domain.spectator.SpectatorManager;
-import dev.ua.ikeepcalm.mythicBedwars.listener.VotingListener;
 import dev.ua.ikeepcalm.mythicBedwars.domain.voting.service.VotingManager;
-import dev.ua.ikeepcalm.mythicBedwars.domain.runnable.ActingProgressionTask;
+import dev.ua.ikeepcalm.mythicBedwars.listener.*;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -121,6 +121,7 @@ public final class MythicBedwars extends JavaPlugin {
             Bukkit.getScheduler().runTask(this, this::registerPlanStatistics);
 
             new ActingProgressionTask(this).runTaskTimer(this, 20L, 20L);
+            new PathwayVerificationTask(this).runTaskTimer(this, 200L, 400L);
 
             if (this.saveIntervalSeconds > 0 && database != null && statisticsManager != null) {
                 long saveIntervalTicks = this.saveIntervalSeconds * 20L;

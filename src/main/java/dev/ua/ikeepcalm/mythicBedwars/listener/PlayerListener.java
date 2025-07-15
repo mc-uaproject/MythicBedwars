@@ -9,6 +9,7 @@ import dev.ua.ikeepcalm.coi.domain.pathway.types.FlexiblePathway;
 import dev.ua.ikeepcalm.coi.domain.potion.model.SequencePotion;
 import dev.ua.ikeepcalm.coi.pathways.darkness.abilities.nightmare.Nightmare;
 import dev.ua.ikeepcalm.coi.pathways.demoness.abilities.ThreadHands;
+import dev.ua.ikeepcalm.coi.pathways.door.abilities.TravelersDoor;
 import dev.ua.ikeepcalm.mythicBedwars.MythicBedwars;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -52,7 +53,7 @@ public class PlayerListener implements Listener {
             return;
         }
 
-        List<Class<?>> blockedAbilities = List.of(ThreadHands.class, Nightmare.class);
+        List<Class<?>> blockedAbilities = List.of(ThreadHands.class, Nightmare.class, TravelersDoor.class);
         if (blockedAbilities.stream().anyMatch(clazz -> clazz.isInstance(event.getAbility()))) {
             event.setCancelled(true);
         }

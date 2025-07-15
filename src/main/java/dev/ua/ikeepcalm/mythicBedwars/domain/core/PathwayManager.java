@@ -3,11 +3,13 @@ package dev.ua.ikeepcalm.mythicBedwars.domain.core;
 import de.marcely.bedwars.api.arena.Arena;
 import de.marcely.bedwars.api.arena.Team;
 import dev.ua.ikeepcalm.coi.CircleOfImagination;
+import dev.ua.ikeepcalm.coi.domain.ability.types.Ability;
 import dev.ua.ikeepcalm.coi.domain.beyonder.model.Beyonder;
 import dev.ua.ikeepcalm.mythicBedwars.MythicBedwars;
 import dev.ua.ikeepcalm.mythicBedwars.domain.balancer.PathwayBalancer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -62,7 +64,7 @@ public class PathwayManager {
         String pathway = getTeamPathway(arena, team);
         if (pathway == null) {
             MythicBedwars.getInstance().getLogger().warning("No pathway assigned to team " + team.getDisplayName() +
-                    " in arena " + arena.getName() + " for player " + player.getName());
+                                                            " in arena " + arena.getName() + " for player " + player.getName());
             return;
         }
 
@@ -75,12 +77,28 @@ public class PathwayManager {
 
         PlayerMagicData existingData = playerData.get(playerId);
         if (existingData != null && existingData.getArenaName().equals(arena.getName())) {
-            Beyonder beyonder = new Beyonder(playerId, player.getName(), existingData.getPathway(), existingData.getCurrentSequence());
+            if (!pathway.equals(existingData.getPathway())) {
+                MythicBedwars.getInstance().getLogger().info("Player " + player.getName() +
+                                                             " changed teams, updating pathway from " + existingData.getPathway() +
+                                                             " to " + pathway);
 
-            if (existingData.getStoredActing() > 0) {
-                beyonder.getPathways().getFirst().setActing(existingData.getStoredActing());
+                Beyonder beyonder = new Beyonder(playerId, player.getName(), pathway, existingData.getCurrentSequence());
+
+                if (existingData.getStoredActing() > 0) {
+                    beyonder.getPathways().getFirst().setActing(existingData.getStoredActing());
+                }
+
+                existingData = new PlayerMagicData(playerId, pathway, arena.getName());
+                existingData.setCurrentSequence(beyonder.getLowestSequenceNumber());
+                playerData.put(playerId, existingData);
+            } else {
+                Beyonder beyonder = new Beyonder(playerId, player.getName(), existingData.getPathway(), existingData.getCurrentSequence());
+
+                if (existingData.getStoredActing() > 0) {
+                    beyonder.getPathways().getFirst().setActing(existingData.getStoredActing());
+                }
             }
-            
+
             existingData.resetGameStartTimeOnReconnect();
             existingData.setActive(true);
             return;
@@ -140,7 +158,15 @@ public class PathwayManager {
                 if (player != null) {
                     Beyonder beyonder = Beyonder.of(player);
                     if (beyonder != null) {
-                        beyonder.destroy();
+                        for (Ability ability : beyonder.getAvailableAbilities().values()) {
+                            ability.setActivated(false);
+                        }
+                        new BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                beyonder.destroy();
+                            }
+                        }.runTaskLater(MythicBedwars.getInstance(), 60L);
                     }
                 }
                 playerData.remove(playerId);

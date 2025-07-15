@@ -8,7 +8,6 @@ MythicBedwars is a magical addon for Marcely's Bedwars that integrates the Circl
 
 - **Magical Pathways**: Each team is randomly assigned a unique magical pathway (Fool, Door, Error, Priest, Sun, Tyrant, Demoness)
 - **Sequence Progression**: Players can advance through magical sequences (9 to 0) by purchasing and consuming potions
-- **Custom Shop**: Adds a "Magic" category to the Bedwars shop where players can purchase sequence potions
 - **Acting Progression**: Players gain "acting" (magical energy) passively and through game actions like kills and bed breaks
 - **Balanced Economy**: Configurable prices for potions using standard Bedwars currencies (iron, gold, diamond, emerald)
 - **Team-Based Magic**: Each team has its own magical pathway, creating unique strategies and gameplay dynamics
